@@ -1,13 +1,32 @@
 import pandas as pd
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+from ReadData import *
+from ClassificatioAlg import KNeighbours
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import normalize
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    # print_hi('PyCharm')
-    df = pd.read_csv('input/Regression/Target.txt')
-    df = pd.read_csv('input/Regression/Var1.txt')
+    # df = read_regression_data()
+
+    df = read_classification_data()
+
+    X = df.to_numpy()[:, :-1]
+    y = df.to_numpy()[:, -1]
+
+    scaler = StandardScaler()
+    scaler.fit(X)
+    X_scaled = scaler.transform(X)
+
+    X_train, X_test, y_train, y_test = train_test_split(X_scaled, y,
+                                                        test_size=0.2)
+
+    knn = KNeighbours(k_neighbors=5)
+    knn.fit(X_train, y_train)
+
+    pred = knn.predict(X_test)
+
+    print(f'Otrzymaliśmy accuracy: {accuracy_score(y_test, pred)} przy k '
+          f'najbliższych sąsiadów równym: {knn.k}')
