@@ -5,16 +5,19 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import KFold
 from sklearn.metrics import confusion_matrix
 from statistics import mode
+from heapq import nlargest
+from time import time
+from scipy.spatial.distance import mahalanobis
 from collections import Counter
 
 
 class KNeighbours:
-
-    def __init__(self, k_neighbors=0, k_max=5, n_splits=5, shuffle=True):
+    def __init__(self, k_neighbors=0, k_min=1, k_max=5, n_splits=5, shuffle=True):
 
         self.k_neighbors = k_neighbors
         self.n_splits = n_splits
         self.k_max = k_max
+        self.k_min = k_min
         self.shuffle = shuffle
 
         self.X_train = None
@@ -27,6 +30,8 @@ class KNeighbours:
         self.size_test = None
         self.y_test = None
 
+        self.inv_corr_matrix = None
+
     # def __prefit(self, X_train, y_train):
     #     self.X_train = X_train
     #     self.y_train = y_train
@@ -34,7 +39,7 @@ class KNeighbours:
     #     self.dim = len(self.X_train[0])
 
     def fit(self, x_train, y_train):
-
+        self.inv_corr_matrix = np.linalg.inv(pd.DataFrame(x_train).corr())
         # self.__prefit(X_train, y_train)
 
         # if self.k_max == 0:
@@ -42,13 +47,15 @@ class KNeighbours:
 
         if self.k_neighbors == 0:
             kf = KFold(n_splits=self.n_splits, shuffle=self.shuffle)
-            k_array = np.full(self.k_max, 0.0)
+            # k_array = np.full(self.k_max, 0.0)
+            k_array = []
             index_k = 0
-
-            for k in range(1, self.k_max + 1):
+            time_start = time()
+            for k in range(self.k_min, self.k_max + 1):
                 self.k = k
-                scores = np.full(self.n_splits, 0.0)
-                indexCV = 0
+                # scores = np.full(self.n_splits, 0.0)
+                scores = []
+                # indexCV = 0
                 # kf.get_n_splits(self.X_train)
 
                 for train_index, test_index in kf.split(x_train):
@@ -60,20 +67,20 @@ class KNeighbours:
                     # self.__prefit(X_trainCV, y_trainCV)
 
                     pr = self.predict(X_testCV, X_trainCV, y_trainCV)
-                    print(y_testCV)
-                    print(pr)
                     acS = accuracy_score(y_testCV, pr)
-                    scores[indexCV] = acS
-                    indexCV += 1
+                    scores.append(acS)
+                    # indexCV += 1
                     # Powrót do wejściowego zbioru treningowego:
                     # self.__prefit(X_train, y_train)
 
-                scores = np.sort(scores)
-                print(f'scores: {scores}')
-                k_array[index_k] = scores[0]
-                index_k += 1
+                scores.sort()
+                k_array.append(scores[0])
+                print(f'k: {k}, time: {time() - time_start}, score: {scores[0]}')
+                # print(f'scores: {scores}')
+                # k_array[index_k] = scores[0]
+                # index_k += 1
 
-            self.k = np.argmax(k_array) + 1
+            self.k = max(list(enumerate(k_array)), key=lambda x: x[1])[0] + 1
             self.X_train = x_train
             self.y_train = y_train
         else:
@@ -91,31 +98,33 @@ class KNeighbours:
 
         self.X_test = x_test
         self.size_test = len(self.X_test)
-        self.y_test = np.full(self.size_test, 0.0)
+        # self.y_test = np.full(self.size_test, 0.0)
+        self.y_test = []
 
         # distances = np.full((self.size, 2), 0.0)
         distances = []
-        index_q = 0
+        # index_q = 0
 
         for q in self.X_test:
-            index = 0
-            for a in self.X_train:
-                ## TODO add mahalonobis metric
-                dist = np.linalg.norm(a - q)
-                distances.append((dist, self.y_train[index]))
+            # index = 0
+            for a, b in zip(self.X_train, self.y_train):
+                # dist = np.linalg.norm(a - q)
+                dist = mahalanobis(a, q, self.inv_corr_matrix)
+                distances.append((dist, b))
                 # distances[index, 0] = dist
                 # distances[index, 1] = self.y_train[index]
-                index += 1
+                # index += 1
 
             # distances = distances[distances[:, 0].argsort()]
-            distances.sort(key=lambda x: x[0])
-            SmallestDistances = distances[0:self.k]
+            # distances.sort(key=lambda x: x[0])
+            # SmallestDistances = distances[0:self.k]
+            SmallestDistances = nlargest(self.k, distances)
 
-            # cl = mode(SmallestDistances[:,1])- ta funkcja niestety nie radzi sobie z więcej niż jedną modą
-            # cl = Counter(SmallestDistances[:, 1]).most_common(1)[0][0]
-            cl = Counter([x[1] for x in SmallestDistances]).most_common(1)[0][0]
-            self.y_test[index_q] = cl
-            index_q += 1
+            # cl = Counter([x[1] for x in SmallestDistances]).most_common(1)[0][0]
+            cl = mode([x[1] for x in SmallestDistances])
+            # self.y_test[index_q] = cl
+            self.y_test.append(cl)
+            # index_q += 1
         return self.y_test
 
 # from ReadData import *
