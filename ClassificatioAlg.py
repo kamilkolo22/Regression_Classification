@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn import datasets
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import KFold
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import confusion_matrix
 from statistics import mode
 from heapq import nlargest
@@ -32,31 +33,19 @@ class KNeighbours:
 
         self.inv_corr_matrix = None
 
-    # def __prefit(self, X_train, y_train):
-    #     self.X_train = X_train
-    #     self.y_train = y_train
-    #     self.size = len(self.X_train)
-    #     self.dim = len(self.X_train[0])
-
-    def fit(self, x_train, y_train):
+    def fit(self, x_train, y_train, fast_fit=False):
+        """Fit model by checking different k param values"""
         self.inv_corr_matrix = np.linalg.inv(pd.DataFrame(x_train).corr())
-        # self.__prefit(X_train, y_train)
-
-        # if self.k_max == 0:
-        #     self.k_max = self.size
 
         if self.k_neighbors == 0:
+            # Split data for cross validation
             kf = KFold(n_splits=self.n_splits, shuffle=self.shuffle)
-            # k_array = np.full(self.k_max, 0.0)
             k_array = []
-            index_k = 0
-            time_start = time()
+
             for k in range(self.k_min, self.k_max + 1):
+                time_start = time()
                 self.k = k
-                # scores = np.full(self.n_splits, 0.0)
                 scores = []
-                # indexCV = 0
-                # kf.get_n_splits(self.X_train)
 
                 for train_index, test_index in kf.split(x_train):
                     X_trainCV, X_testCV = x_train[train_index], \
@@ -64,22 +53,21 @@ class KNeighbours:
                     y_trainCV, y_testCV = y_train[train_index], \
                                           y_train[test_index]
 
-                    # self.__prefit(X_trainCV, y_trainCV)
-
-                    pr = self.predict(X_testCV, X_trainCV, y_trainCV)
+                    if fast_fit:
+                        kNN = KNeighborsClassifier(n_neighbors=self.k)
+                        kNN.fit(X_trainCV, y_trainCV)
+                        pr = kNN.predict(X_testCV)
+                    else:
+                        pr = self.predict(X_testCV, X_trainCV, y_trainCV)
                     acS = accuracy_score(y_testCV, pr)
                     scores.append(acS)
-                    # indexCV += 1
-                    # Powrót do wejściowego zbioru treningowego:
-                    # self.__prefit(X_train, y_train)
 
+                # Write lowest score from cross validation
                 scores.sort()
                 k_array.append(scores[0])
                 print(f'k: {k}, time: {time() - time_start}, score: {scores[0]}')
-                # print(f'scores: {scores}')
-                # k_array[index_k] = scores[0]
-                # index_k += 1
 
+            # Select k for which score value was highest
             self.k = max(list(enumerate(k_array)), key=lambda x: x[1])[0] + 1
             self.X_train = x_train
             self.y_train = y_train
@@ -89,7 +77,7 @@ class KNeighbours:
             self.y_train = y_train
 
     def predict(self, x_test, x_train=None, y_train=None):
-
+        """Predict values using KNN algorithm and mahalonobis metric"""
         if x_train is not None:
             self.X_train = x_train
             self.y_train = y_train
@@ -98,35 +86,22 @@ class KNeighbours:
 
         self.X_test = x_test
         self.size_test = len(self.X_test)
-        # self.y_test = np.full(self.size_test, 0.0)
         self.y_test = []
-
-        # distances = np.full((self.size, 2), 0.0)
         distances = []
-        # index_q = 0
 
         for q in self.X_test:
-            # index = 0
             for a, b in zip(self.X_train, self.y_train):
                 # dist = np.linalg.norm(a - q)
                 dist = mahalanobis(a, q, self.inv_corr_matrix)
                 distances.append((dist, b))
-                # distances[index, 0] = dist
-                # distances[index, 1] = self.y_train[index]
-                # index += 1
 
-            # distances = distances[distances[:, 0].argsort()]
-            # distances.sort(key=lambda x: x[0])
-            # SmallestDistances = distances[0:self.k]
             SmallestDistances = nlargest(self.k, distances)
 
-            # cl = Counter([x[1] for x in SmallestDistances]).most_common(1)[0][0]
             cl = mode([x[1] for x in SmallestDistances])
-            # self.y_test[index_q] = cl
             self.y_test.append(cl)
-            # index_q += 1
         return self.y_test
 
+## This part is for debugging, can be deleted later
 # from ReadData import *
 # from sklearn.preprocessing import StandardScaler
 # from sklearn.metrics import accuracy_score
