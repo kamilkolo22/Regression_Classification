@@ -10,7 +10,8 @@ from sklearn.preprocessing import StandardScaler
 def split_data(x, y, test_size=0.3, validate_size=0.1):
     # Get test sets
     y = np.array(y).flatten()
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size)
+    x_train, x_test, y_train, y_test = train_test_split(x, y,
+                                                        test_size=test_size)
 
     # Run train_test_split again to get train and validate sets
     post_split_validate_size = validate_size / (1 - test_size)
@@ -32,11 +33,11 @@ def fit_regression(x_train, y_train, x_test, y_test):
             repressor.fit(x_train, y_train)
             pred = repressor.predict(x_test)
 
-            MAE = mean_absolute_error(y_test, pred)
-            MSE = mean_squared_error(y_test, pred)
-            R2 = r2_score(y_test, pred)
+            mae = mean_absolute_error(y_test, pred)
+            mse = mean_squared_error(y_test, pred)
+            r2 = r2_score(y_test, pred)
 
-            results.append([kernel, epsilon, MAE, MSE, R2])
+            results.append([kernel, epsilon, mae, mse, r2])
 
     results = pd.DataFrame(results, columns=['kernel', 'epsilon',
                                              'MAE', 'MSE', 'R2'])

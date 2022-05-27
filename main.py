@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
@@ -16,28 +17,29 @@ from RegressionAlg import fit_regression, split_data
 
 def run_classification_alg():
     df = read_classification_data()
-    df = df[['battery_power', 'blue', 'clock_speed', 'dual_sim', 'fc', 'four_g',
-             'int_memory', 'n_cores', 'ram', 'touch_screen', 'wifi', 'price_range']]
-    X = df.to_numpy()[:, :-1]
+    df = df[['battery_power', 'blue', 'clock_speed', 'dual_sim',
+             'fc', 'four_g', 'int_memory', 'n_cores', 'ram', 'touch_screen',
+             'wifi', 'price_range']]
+    x = df.to_numpy()[:, :-1]
     y = df.to_numpy()[:, -1]
 
-    # scaler = StandardScaler()
-    # scaler.fit(X)
-    # X_scaled = scaler.transform(X)
+    # sca = StandardScaler()
+    # sca.fit(X)
+    # X_scaled = sca.transform(X)
     # X_scaled = normalize(X)
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
     knn = KNeighbours(
         # k_neighbors=25,
         metric='mahalanobis',
         k_min=5,
         k_max=30
     )
-    knn.fit(X_train, y_train, fast_fit=False)
-    pred = knn.predict(X_test)
+    knn.fit(x_train, y_train, fast_fit=False)
+    pred = knn.predict(x_test)
 
-    print(f'Otrzymaliśmy accuracy: {accuracy_score(y_test, pred)} przy k '
-          f'najbliższych sąsiadów równym: {knn.k}')
+    print(f'We got the accuracy: {accuracy_score(y_test, pred)} for {knn.k} '
+          f'nearest neighbours')
     print(f'Confusion matrix: \n{pd.DataFrame(confusion_matrix(y_test, pred))}')
 
 
@@ -58,11 +60,11 @@ def run_regression():
     model.fit(x_train, y_train)
     pred = model.predict(x_validate).flatten()
 
-    MAE = mean_absolute_error(y_validate, pred)
-    MSE = mean_squared_error(y_validate, pred)
-    R2 = r2_score(y_validate, pred)
+    mae = mean_absolute_error(y_validate, pred)
+    mse = mean_squared_error(y_validate, pred)
+    r2 = r2_score(y_validate, pred)
 
-    print(f'MAE: {MAE}\nMSE: {MSE}\nR2: {R2}\n'
+    print(f'MAE: {mae}\nMSE: {mse}\nR2: {r2}\n'
           f'Target mean: {df["Target"].mean()}\n'
           f'Target Std dev: {df["Target"].std()}')
 

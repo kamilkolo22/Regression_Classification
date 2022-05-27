@@ -61,9 +61,9 @@ class KNeighbours:
 
                     # fit model to cross validation set
                     if fast_fit:
-                        kNN = KNeighborsClassifier(n_neighbors=self.k)
-                        kNN.fit(x_train_cv, y_train_cv)
-                        pr = kNN.predict(x_test_cv)
+                        knn = KNeighborsClassifier(n_neighbors=self.k)
+                        knn.fit(x_train_cv, y_train_cv)
+                        pr = knn.predict(x_test_cv)
                     else:
                         pr = self.predict(x_test_cv, x_train_cv,
                                           y_train_cv)
@@ -73,8 +73,7 @@ class KNeighbours:
                 # Write lowest score from cross validation
                 scores_min = min(scores)
                 k_array.append(scores)
-                print(
-                    f'k: {k}, time: {time() - time_start}, score: {scores_min}')
+                print(f'k: {k}, time: {time()-time_start}, score: {scores_min}')
 
             # Select k for which score value was highest
             self.k = max(list(enumerate(k_array)), key=lambda x: x[1])[0] + 1
