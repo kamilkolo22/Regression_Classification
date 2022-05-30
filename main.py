@@ -15,6 +15,7 @@ from RegressionAlg import fit_regression, split_data
 
 
 def run_classification_alg():
+    """Run script for the second problem (phones classification)"""
     df = read_classification_data()
     df = df[['battery_power', 'blue', 'clock_speed', 'dual_sim', 'fc', 'four_g',
              'int_memory', 'n_cores', 'ram', 'touch_screen', 'wifi', 'price_range']]
@@ -42,6 +43,7 @@ def run_classification_alg():
 
 
 def run_regression():
+    """Run script for the first problem (regression for some experiment data)"""
     df = read_regression_data()
 
     # split data

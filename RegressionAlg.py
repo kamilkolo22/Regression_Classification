@@ -8,6 +8,7 @@ from sklearn.preprocessing import StandardScaler
 
 
 def split_data(x, y, test_size=0.3, validate_size=0.1):
+    """Split data to three sets, train, test and validation"""
     # Get test sets
     y = np.array(y).flatten()
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size)
@@ -21,6 +22,7 @@ def split_data(x, y, test_size=0.3, validate_size=0.1):
 
 
 def fit_regression(x_train, y_train, x_test, y_test):
+    """Check different params in SVR model"""
     kernels = ["linear", "poly", "rbf", "sigmoid"]
     epsilons = [0.05, 0.1, 0.25, 0.5]
 
